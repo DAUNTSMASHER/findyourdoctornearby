@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Find Your Doctor Nearby
+
+A mobile-first web app to search for doctors near your location. Built with React (Next.js), Node.js API routes, and deployed on Vercel with Blob storage for images.
+
+## Tech Stack
+
+- **Frontend:** Next.js 16, React 19, Tailwind CSS
+- **Backend:** Next.js API Routes (Node.js)
+- **Storage:** Vercel Blob (for doctor profile images)
+- **Deployment:** Vercel
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Node.js 18+
+- npm
+
+### Local Development
+
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+2. **Set up environment variables:**
+   ```bash
+   cp .env.example .env.local
+   ```
+   For image uploads, add your Vercel Blob token to `.env.local`:
+   - Create a Blob store at [Vercel Dashboard → Storage](https://vercel.com/dashboard/stores)
+   - Copy the `BLOB_READ_WRITE_TOKEN` and add it to `.env.local`
+
+3. **Run the dev server:**
+   ```bash
+   npm run dev
+   ```
+
+4. Open [http://localhost:3000](http://localhost:3000)
+
+### Deploy to Vercel
+
+1. Push your code to GitHub
+2. Import the project in [Vercel](https://vercel.com/new)
+3. Create a Blob store in your project:
+   - Go to your project → Storage → Create Database/Store → Blob
+   - This adds `BLOB_READ_WRITE_TOKEN` automatically
+4. Deploy
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── api/
+│   │   ├── doctors/    # GET, POST doctors
+│   │   └── upload/     # POST image to Vercel Blob
+│   ├── articles/
+│   ├── tips/
+│   └── page.tsx
+├── components/
+│   ├── Header.tsx
+│   ├── DoctorCard.tsx
+│   ├── DoctorList.tsx
+│   └── SearchFilters.tsx
+└── lib/
+    ├── types.ts
+    └── data.ts        # Sample doctors
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Search by location:** Filter doctors by Country, City, Area, and Radius
+- **Doctor cards:** Name, specialization, workplace, phone, map link
+- **Image uploads:** API ready for uploading doctor photos to Vercel Blob
+- **Mobile-first:** Responsive layout optimized for phones and tablets

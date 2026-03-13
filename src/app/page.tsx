@@ -1,65 +1,125 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { Header } from "@/components/Header";
+import { BottomBar } from "@/components/BottomBar";
+import { Disclaimer } from "@/components/Disclaimer";
+import { DoctorList } from "@/components/DoctorList";
+import { SearchFilters } from "@/components/SearchFilters";
+import type { Doctor, SearchFilters as SearchFiltersType, UserLocation } from "@/lib/types";
 
 export default function Home() {
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
+  const [locationInfo, setLocationInfo] = useState({ location: "your location", radius: "y" });
+  const [hasSearched, setHasSearched] = useState(false);
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+        () => {}
+      );
+    }
+  }, []);
+
+  const fetchDoctors = useCallback(async () => {
+    try {
+      const res = await fetch("/api/doctors");
+      if (res.ok) {
+        const data = await res.json();
+        setDoctors(data.doctors);
+        setFilteredDoctors(data.doctors);
+      } else {
+        const { sampleDoctors } = await import("@/lib/data");
+        setDoctors(sampleDoctors);
+        setFilteredDoctors(sampleDoctors);
+      }
+    } catch {
+      const { sampleDoctors } = await import("@/lib/data");
+      setDoctors(sampleDoctors);
+      setFilteredDoctors(sampleDoctors);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDoctors();
+  }, [fetchDoctors]);
+
+  const handleSearch = (filters: SearchFiltersType) => {
+    let result = [...doctors];
+
+    if (filters.problem) {
+      const problemLower = filters.problem.toLowerCase();
+      result = result.filter((d) =>
+        d.specialization.toLowerCase().includes(problemLower)
+      );
+    }
+    if (filters.country) {
+      result = result.filter((d) =>
+        d.country.toLowerCase().includes(filters.country.toLowerCase())
+      );
+    }
+    if (filters.city) {
+      result = result.filter((d) =>
+        d.city.toLowerCase().includes(filters.city.toLowerCase())
+      );
+    }
+    if (filters.area) {
+      result = result.filter((d) =>
+        d.area.toLowerCase().includes(filters.area.toLowerCase())
+      );
+    }
+
+    setFilteredDoctors(result);
+    setLocationInfo({
+      location: filters.city || filters.area || filters.country || "your location",
+      radius: filters.radius || "y",
+    });
+    setHasSearched(true);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/30 to-cyan-50/50">
+      <Header />
+      <main
+        className={`mx-auto min-h-screen px-4 py-8 pb-20 transition-all duration-500 sm:px-6 ${
+          hasSearched ? "max-w-7xl pt-12 lg:px-8" : "flex max-w-md items-center justify-center"
+        }`}
+      >
+        {!hasSearched ? (
+          <div className="w-full animate-fade-in">
+            <SearchFilters
+              onSearch={handleSearch}
+              resultCount={filteredDoctors.length}
+              compact={false}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+          </div>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+            <div className="min-w-0 animate-pop-in">
+              <DoctorList
+                doctors={filteredDoctors}
+                userLocation={userLocation}
+                locationPlaceholder={locationInfo.location}
+                radiusPlaceholder={locationInfo.radius}
+              />
+              <Disclaimer variant="compact" className="mt-6" />
+            </div>
+            <aside className="lg:sticky lg:top-8 lg:self-start">
+              <div className="animate-pop-in [animation-delay:100ms]">
+                <SearchFilters
+                  onSearch={handleSearch}
+                  resultCount={filteredDoctors.length}
+                  compact={true}
+                />
+              </div>
+            </aside>
+          </div>
+        )}
       </main>
+      <BottomBar />
     </div>
   );
 }
