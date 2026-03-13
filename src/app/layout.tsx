@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { LocaleProvider } from "@/contexts/LocaleContext";
 import { DisclaimerProvider } from "@/contexts/DisclaimerContext";
 import "./globals.css";
@@ -32,6 +34,8 @@ export default function RootLayout({
         <LocaleProvider>
           <DisclaimerProvider>{children}</DisclaimerProvider>
         </LocaleProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

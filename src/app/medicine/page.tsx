@@ -6,12 +6,9 @@ import { Header } from "@/components/Header";
 import { BottomBar } from "@/components/BottomBar";
 import { Disclaimer } from "@/components/Disclaimer";
 import { RealTimeInfo } from "@/components/RealTimeInfo";
+import { WebResultsSection } from "@/components/WebResultsSection";
 import { IconPill } from "@/components/icons/MedicalIcons";
-import {
-  countriesWithStates,
-  findMedicines,
-  type Medicine,
-} from "@/lib/medicine-data";
+import { countriesWithStates, type Medicine } from "@/lib/medicine-data";
 
 export default function MedicinePage() {
   const { t } = useTranslation();
@@ -19,14 +16,31 @@ export default function MedicinePage() {
   const [state, setState] = useState("");
   const [condition, setCondition] = useState("");
   const [results, setResults] = useState<Medicine[]>([]);
+  const [webResults, setWebResults] = useState<{ title: string; url: string; snippet: string }[]>([]);
   const [searched, setSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const states = country ? countriesWithStates[country] ?? [] : [];
 
-  const handleSearch = () => {
-    const meds = findMedicines(condition, country, state);
-    setResults(meds);
+  const handleSearch = async () => {
+    setLoading(true);
     setSearched(true);
+    try {
+      const params = new URLSearchParams({
+        condition: condition.trim(),
+        country,
+        state,
+      });
+      const res = await fetch(`/api/medicine?${params}`);
+      const data = await res.json();
+      setResults(data.medicines ?? []);
+      setWebResults(data.webResults ?? []);
+    } catch {
+      setResults([]);
+      setWebResults([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCountryChange = (c: string) => {
@@ -113,9 +127,10 @@ export default function MedicinePage() {
 
           <button
             onClick={handleSearch}
-            className="mt-6 w-full rounded-xl bg-teal-500 py-3 font-medium text-white transition-colors hover:bg-teal-600"
+            disabled={loading}
+            className="mt-6 w-full rounded-xl bg-teal-500 py-3 font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-70"
           >
-            {t("medicine.findMedicine")}
+            {loading ? t("crawl.loading") : t("medicine.findMedicine")}
           </button>
 
           <RealTimeInfo
@@ -158,6 +173,9 @@ export default function MedicinePage() {
                     </div>
                   ))}
                 </div>
+                {webResults.length > 0 && (
+                  <WebResultsSection results={webResults} className="mt-6" />
+                )}
                 <Disclaimer variant="compact" className="mt-4" />
               </div>
             ) : (

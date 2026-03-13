@@ -102,9 +102,10 @@ export interface Translations {
     compact: string;
     close: string;
   };
-  crawl: {
-    realTimeInfo: string;
-    getRealTimeInfo: string;
+    crawl: {
+      realTimeInfo: string;
+      doctorsFromGoogle: string;
+      getRealTimeInfo: string;
     loading: string;
     noResults: string;
     error: string;
@@ -201,6 +202,7 @@ export const translations: Record<Locale, Translations> = {
     },
     crawl: {
       realTimeInfo: "Real-time information",
+      doctorsFromGoogle: "Doctors from Google",
       getRealTimeInfo: "Get real-time info",
       loading: "Searching the web...",
       noResults: "No results found.",
@@ -296,6 +298,7 @@ export const translations: Record<Locale, Translations> = {
     },
     crawl: {
       realTimeInfo: "রিয়েল-টাইম তথ্য",
+      doctorsFromGoogle: "গুগল থেকে ডাক্তার",
       getRealTimeInfo: "রিয়েল-টাইম তথ্য দেখুন",
       loading: "অনুসন্ধান চলছে...",
       noResults: "কোন ফলাফল নেই।",
@@ -391,6 +394,7 @@ export const translations: Record<Locale, Translations> = {
     },
     crawl: {
       realTimeInfo: "रीयल-टाइम जानकारी",
+      doctorsFromGoogle: "गूगल से डॉक्टर",
       getRealTimeInfo: "रीयल-टाइम जानकारी लाएं",
       loading: "खोज हो रही है...",
       noResults: "कोई परिणाम नहीं मिला।",
@@ -486,6 +490,7 @@ export const translations: Record<Locale, Translations> = {
     },
     crawl: {
       realTimeInfo: "ریئل ٹائم معلومات",
+      doctorsFromGoogle: "گوگل سے ڈاکٹر",
       getRealTimeInfo: "ریئل ٹائم معلومات حاصل کریں",
       loading: "تلاش ہو رہی ہے...",
       noResults: "کوئی نتیجہ نہیں ملا۔",

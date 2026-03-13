@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { useTranslation } from "@/contexts/LocaleContext";
 import { Header } from "@/components/Header";
 import { BottomBar } from "@/components/BottomBar";
 import { Disclaimer } from "@/components/Disclaimer";
 import { RealTimeInfo } from "@/components/RealTimeInfo";
+import { WebResultsSection } from "@/components/WebResultsSection";
 import { IconTips } from "@/components/icons/MedicalIcons";
 import { sampleTips, tipCategories, type Tip } from "@/lib/tips-data";
 
@@ -14,23 +15,30 @@ export default function TipsPage() {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("All");
+  const [tips, setTips] = useState<Tip[]>(sampleTips);
+  const [webResults, setWebResults] = useState<{ title: string; url: string; snippet: string }[]>([]);
+
+  useEffect(() => {
+    const q = search.trim();
+    const t = setTimeout(() => {
+      fetch(`/api/tips?q=${encodeURIComponent(q)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setTips(data.tips ?? sampleTips);
+          setWebResults(data.webResults ?? []);
+        })
+        .catch(() => {});
+    }, 400);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const filteredTips = useMemo(() => {
-    let result = sampleTips;
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (t) =>
-          t.title.toLowerCase().includes(q) ||
-          t.category.toLowerCase().includes(q) ||
-          t.summary.toLowerCase().includes(q)
-      );
-    }
+    let result = tips;
     if (filterCategory !== "All") {
-      result = result.filter((t) => t.category === filterCategory);
+      result = result.filter((tip) => tip.category === filterCategory);
     }
     return result;
-  }, [search, filterCategory]);
+  }, [tips, filterCategory]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/30 to-cyan-50/50">
@@ -89,6 +97,10 @@ export default function TipsPage() {
             </button>
           ))}
         </div>
+
+        {webResults.length > 0 && (
+          <WebResultsSection results={webResults} className="mt-6" />
+        )}
 
         {/* Top Tips */}
         <section className="mt-8">

@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "@/contexts/LocaleContext";
 import { Header } from "@/components/Header";
 import { BottomBar } from "@/components/BottomBar";
 import { Disclaimer } from "@/components/Disclaimer";
 import { RealTimeInfo } from "@/components/RealTimeInfo";
+import { WebResultsSection } from "@/components/WebResultsSection";
 import { IconKnow } from "@/components/icons/MedicalIcons";
-import { statItems, findStatByInput, type StatItem } from "@/lib/do-you-know-data";
+import { type StatItem } from "@/lib/do-you-know-data";
 
 function formatNumber(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
@@ -19,12 +20,43 @@ export default function DoYouKnowPage() {
   const [input, setInput] = useState("");
   const [period, setPeriod] = useState<"daily" | "monthly" | "yearly">("daily");
   const [result, setResult] = useState<StatItem | null>(null);
+  const [webResults, setWebResults] = useState<{ title: string; url: string; snippet: string }[]>([]);
   const [searched, setSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [topicList, setTopicList] = useState<StatItem[]>([]);
 
-  const handleSearch = () => {
-    const match = findStatByInput(input);
-    setResult(match);
+  useEffect(() => {
+    fetch("/api/stats?list=1")
+      .then((res) => res.json())
+      .then((data) => {
+        const items = data.items ?? [];
+        const seen = new Set<string>();
+        const unique = items.filter((i: StatItem) => {
+          if (seen.has(i.topic)) return false;
+          seen.add(i.topic);
+          return true;
+        });
+        setTopicList(unique.slice(0, 8));
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleSearch = async (topicOverride?: string) => {
+    const topic = topicOverride ?? input.trim();
+    setInput(topicOverride ?? input);
+    setLoading(true);
     setSearched(true);
+    try {
+      const res = await fetch(`/api/stats?topic=${encodeURIComponent(topic)}`);
+      const data = await res.json();
+      setResult(data.stat ?? null);
+      setWebResults(data.webResults ?? []);
+    } catch {
+      setResult(null);
+      setWebResults([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getValue = (item: StatItem) => {
@@ -84,10 +116,11 @@ export default function DoYouKnowPage() {
             </div>
           </div>
           <button
-            onClick={handleSearch}
-            className="mt-4 w-full rounded-xl bg-teal-500 py-3 font-medium text-white transition-colors hover:bg-teal-600"
+            onClick={() => handleSearch()}
+            disabled={loading}
+            className="mt-4 w-full rounded-xl bg-teal-500 py-3 font-medium text-white transition-colors hover:bg-teal-600 disabled:opacity-70"
           >
-            {t("doYouKnow.showStatistics")}
+            {loading ? t("crawl.loading") : t("doYouKnow.showStatistics")}
           </button>
 
           <RealTimeInfo query={input} className="mt-6" />
@@ -98,6 +131,9 @@ export default function DoYouKnowPage() {
           <div className="mt-8 animate-pop-in">
             {result ? (
               <>
+                {webResults.length > 0 && (
+                  <WebResultsSection results={webResults} className="mb-6" />
+                )}
                 <StatHeroCard
                   item={result}
                   period={period}
@@ -125,14 +161,19 @@ export default function DoYouKnowPage() {
               Try these topics
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
-              {statItems.slice(0, 6).map((item) => (
+              {(topicList.length ? topicList : [
+                { id: "1", topic: "smoking" },
+                { id: "2", topic: "heart disease" },
+                { id: "3", topic: "diabetes" },
+                { id: "4", topic: "cancer" },
+                { id: "5", topic: "stroke" },
+                { id: "6", topic: "depression" },
+              ]).map((item) => (
                 <button
                   key={item.id}
                   onClick={() => {
                     setInput(item.topic);
-                    setResult(item);
-                    setSearched(true);
-                    setPeriod("daily");
+                    handleSearch(item.topic);
                   }}
                   className="rounded-full bg-white/80 px-4 py-2 text-sm text-neutral-600 shadow-sm transition-colors hover:bg-teal-100 hover:text-teal-700"
                 >

@@ -73,3 +73,7 @@ export const sampleArticles: Article[] = [
     coverImage: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=240&fit=crop",
   },
 ];
+
+export function getArticleById(id: string): Article | undefined {
+  return sampleArticles.find((a) => a.id === id);
+}

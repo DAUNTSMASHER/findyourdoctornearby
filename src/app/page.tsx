@@ -5,14 +5,18 @@ import { Header } from "@/components/Header";
 import { BottomBar } from "@/components/BottomBar";
 import { Disclaimer } from "@/components/Disclaimer";
 import { DoctorList } from "@/components/DoctorList";
+import { WebResultsSection } from "@/components/WebResultsSection";
 import { SearchFilters } from "@/components/SearchFilters";
+import { LoadingProgressBar } from "@/components/LoadingProgressBar";
 import type { Doctor, SearchFilters as SearchFiltersType, UserLocation } from "@/lib/types";
+import { trackSearch } from "@/lib/analytics";
 
 export default function Home() {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
   const [locationInfo, setLocationInfo] = useState({ location: "your location", radius: "y" });
   const [hasSearched, setHasSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
 
   useEffect(() => {
@@ -24,60 +28,83 @@ export default function Home() {
     }
   }, []);
 
-  const fetchDoctors = useCallback(async () => {
-    try {
-      const res = await fetch("/api/doctors");
+  const [webResults, setWebResults] = useState<{ title: string; url: string; snippet: string }[]>([]);
+  const [relaxedSearch, setRelaxedSearch] = useState(false);
+
+  const fetchDoctors = useCallback(
+    async (filters?: {
+      country?: string;
+      city?: string;
+      area?: string;
+      problem?: string;
+      radius?: string;
+    }) => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (filters?.country) params.set("country", filters.country);
+        if (filters?.city) params.set("city", filters.city);
+        if (filters?.area) params.set("area", filters.area);
+        if (filters?.problem) params.set("problem", filters.problem);
+        if (filters?.radius) {
+          const num = parseFloat(filters.radius);
+          if (!isNaN(num) && num > 0) params.set("radius", String(num));
+        }
+        if (userLocation) {
+          params.set("lat", String(userLocation.lat));
+          params.set("lon", String(userLocation.lon));
+        }
+        params.set("limit", "100");
+        const res = await fetch(`/api/doctors?${params}`);
       if (res.ok) {
         const data = await res.json();
-        setDoctors(data.doctors);
-        setFilteredDoctors(data.doctors);
+        setDoctors(data.doctors ?? []);
+        setFilteredDoctors(data.doctors ?? []);
+        setWebResults(data.webResults ?? []);
+        setRelaxedSearch(!!data.relaxedSearch);
       } else {
         const { sampleDoctors } = await import("@/lib/data");
         setDoctors(sampleDoctors);
         setFilteredDoctors(sampleDoctors);
+        setWebResults([]);
+        setRelaxedSearch(false);
       }
     } catch {
       const { sampleDoctors } = await import("@/lib/data");
       setDoctors(sampleDoctors);
       setFilteredDoctors(sampleDoctors);
+      setWebResults([]);
+      setRelaxedSearch(false);
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  },
+    [userLocation]
+  );
 
   useEffect(() => {
     fetchDoctors();
   }, [fetchDoctors]);
 
   const handleSearch = (filters: SearchFiltersType) => {
-    let result = [...doctors];
-
-    if (filters.problem) {
-      const problemLower = filters.problem.toLowerCase();
-      result = result.filter((d) =>
-        d.specialization.toLowerCase().includes(problemLower)
-      );
-    }
-    if (filters.country) {
-      result = result.filter((d) =>
-        d.country.toLowerCase().includes(filters.country.toLowerCase())
-      );
-    }
-    if (filters.city) {
-      result = result.filter((d) =>
-        d.city.toLowerCase().includes(filters.city.toLowerCase())
-      );
-    }
-    if (filters.area) {
-      result = result.filter((d) =>
-        d.area.toLowerCase().includes(filters.area.toLowerCase())
-      );
-    }
-
-    setFilteredDoctors(result);
+    trackSearch({
+      problem: filters.problem || undefined,
+      country: filters.country || undefined,
+      city: filters.city || undefined,
+      area: filters.area || undefined,
+    });
     setLocationInfo({
       location: filters.city || filters.area || filters.country || "your location",
       radius: filters.radius || "y",
     });
     setHasSearched(true);
+    void fetchDoctors({
+      country: filters.country || undefined,
+      city: filters.city || undefined,
+      area: filters.area || undefined,
+      problem: filters.problem || undefined,
+      radius: filters.radius || undefined,
+    });
   };
 
   return (
@@ -99,13 +126,29 @@ export default function Home() {
         ) : (
           <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
             <div className="min-w-0 animate-pop-in">
+              {loading && (
+                <div className="mb-6 space-y-2">
+                  <p className="text-sm font-medium text-teal-600">Loading doctors...</p>
+                  <LoadingProgressBar />
+                </div>
+              )}
+              {!loading && (
               <DoctorList
                 doctors={filteredDoctors}
                 userLocation={userLocation}
                 locationPlaceholder={locationInfo.location}
                 radiusPlaceholder={locationInfo.radius}
+                relaxedSearch={relaxedSearch}
               />
+              {webResults.length > 0 && (
+                <WebResultsSection
+                  results={webResults}
+                  titleKey="crawl.doctorsFromGoogle"
+                  className="mt-6"
+                />
+              )}
               <Disclaimer variant="compact" className="mt-6" />
+              )}
             </div>
             <aside className="lg:sticky lg:top-8 lg:self-start">
               <div className="animate-pop-in [animation-delay:100ms]">

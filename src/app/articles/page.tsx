@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useTranslation } from "@/contexts/LocaleContext";
 import { Header } from "@/components/Header";
 import { BottomBar } from "@/components/BottomBar";
 import { Disclaimer } from "@/components/Disclaimer";
 import { RealTimeInfo } from "@/components/RealTimeInfo";
+import { WebResultsSection } from "@/components/WebResultsSection";
 import { IconArticles } from "@/components/icons/MedicalIcons";
 import { sampleArticles, type Article } from "@/lib/articles-data";
 
@@ -26,23 +28,45 @@ export default function ArticlesPage() {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [filterDisease, setFilterDisease] = useState<string>("All");
+  const [articles, setArticles] = useState<Article[]>(sampleArticles);
+  const [webResults, setWebResults] = useState<{ title: string; url: string; snippet: string }[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    const q = search.trim();
+    setPage(1);
+    const t = setTimeout(() => {
+      fetch(`/api/articles?q=${encodeURIComponent(q)}&page=1&limit=50`)
+        .then((res) => res.json())
+        .then((data) => {
+          setArticles(data.articles ?? sampleArticles);
+          setWebResults(data.webResults ?? []);
+          setTotal(data.total ?? 0);
+        })
+        .catch(() => {});
+    }, 400);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const loadMore = () => {
+    const nextPage = page + 1;
+    fetch(`/api/articles?q=${encodeURIComponent(search.trim())}&page=${nextPage}&limit=50`)
+      .then((res) => res.json())
+      .then((data) => {
+        setArticles((prev) => [...prev, ...(data.articles ?? [])]);
+        setPage(nextPage);
+      })
+      .catch(() => {});
+  };
 
   const filteredArticles = useMemo(() => {
-    let result = sampleArticles;
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (a) =>
-          a.title.toLowerCase().includes(q) ||
-          a.disease.toLowerCase().includes(q) ||
-          a.summary.toLowerCase().includes(q)
-      );
-    }
+    let result = articles;
     if (filterDisease !== "All") {
       result = result.filter((a) => a.disease === filterDisease);
     }
     return result;
-  }, [search, filterDisease]);
+  }, [articles, filterDisease]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/30 to-cyan-50/50">
@@ -93,6 +117,11 @@ export default function ArticlesPage() {
           ))}
         </div>
 
+        {/* Web results from crawl */}
+        {webResults.length > 0 && (
+          <WebResultsSection results={webResults} className="mt-6" />
+        )}
+
         {/* Top Articles */}
         <section className="mt-8">
           <h2 className="text-lg font-semibold text-neutral-700">
@@ -101,12 +130,22 @@ export default function ArticlesPage() {
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {filteredArticles.length > 0 ? (
               filteredArticles.map((article) => (
-                <ArticleCard key={article.id} article={article} />
+                <ArticleCard key={article.id} article={article} hasDetailPage />
               ))
             ) : (
               <p className="col-span-2 py-12 text-center text-neutral-500">
                 {t("articles.noArticlesFound")}
               </p>
+            )}
+            {total > articles.length && (
+              <div className="col-span-2 mt-6 flex justify-center">
+                <button
+                  onClick={loadMore}
+                  className="rounded-xl border border-teal-200 bg-teal-50 px-6 py-3 text-sm font-medium text-teal-700 transition-colors hover:bg-teal-100"
+                >
+                  Load more ({articles.length} of {total})
+                </button>
+              </div>
             )}
           </div>
         </section>
@@ -118,15 +157,18 @@ export default function ArticlesPage() {
   );
 }
 
-function ArticleCard({ article }: { article: Article }) {
+function ArticleCard({
+  article,
+  hasDetailPage = false,
+}: {
+  article: Article;
+  hasDetailPage?: boolean;
+}) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
-  return (
-    <article
-      onClick={() => setExpanded(!expanded)}
-      className="group cursor-pointer overflow-hidden rounded-2xl border border-neutral-200/80 bg-white/90 shadow-sm transition-all duration-300 hover:border-teal-400 hover:shadow-lg hover:shadow-teal-500/15"
-    >
+  const CardContent = (
+    <>
       <div className="relative aspect-[16/10] w-full overflow-hidden">
         <Image
           src={article.coverImage}
@@ -143,16 +185,40 @@ function ArticleCard({ article }: { article: Article }) {
       <div className="p-4">
         <h3 className="font-semibold text-neutral-800 group-hover:text-teal-700">{article.title}</h3>
         <p className="mt-1.5 text-sm text-neutral-600">{article.summary}</p>
-        {expanded && (
+        {!hasDetailPage && expanded && (
           <div className="mt-3 border-t border-neutral-100 pt-3">
             <p className="text-sm font-medium text-neutral-700">{t("articles.whatToDo")}</p>
             <p className="mt-1 text-sm text-neutral-600">{article.content}</p>
           </div>
         )}
         <p className="mt-2 text-xs text-teal-600">
-          {expanded ? t("articles.tapToCollapse") : t("articles.tapToRead")}
+          {hasDetailPage
+            ? t("articles.tapToRead")
+            : expanded
+              ? t("articles.tapToCollapse")
+              : t("articles.tapToRead")}
         </p>
       </div>
+    </>
+  );
+
+  if (hasDetailPage) {
+    return (
+      <Link
+        href={`/articles/${article.id}`}
+        className="group block overflow-hidden rounded-2xl border border-neutral-200/80 bg-white/90 shadow-sm transition-all duration-300 hover:border-teal-400 hover:shadow-lg hover:shadow-teal-500/15"
+      >
+        {CardContent}
+      </Link>
+    );
+  }
+
+  return (
+    <article
+      onClick={() => setExpanded(!expanded)}
+      className="group cursor-pointer overflow-hidden rounded-2xl border border-neutral-200/80 bg-white/90 shadow-sm transition-all duration-300 hover:border-teal-400 hover:shadow-lg hover:shadow-teal-500/15"
+    >
+      {CardContent}
     </article>
   );
 }

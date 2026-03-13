@@ -40,7 +40,7 @@ export function SearchFilters({ onSearch, resultCount, compact = false }: Search
             type="text"
             value={problem}
             onChange={(e) => setProblem(e.target.value)}
-            placeholder="e.g. Medicine, Heart, Bone, Skin, Child"
+            placeholder="e.g. cold, fever, Medicine, Heart, Bone, Skin, Child"
             className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-neutral-800 placeholder:text-neutral-400 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
           />
         </div>
@@ -56,7 +56,7 @@ export function SearchFilters({ onSearch, resultCount, compact = false }: Search
             type="text"
             value={country}
             onChange={(e) => setCountry(e.target.value)}
-            placeholder="Enter country"
+            placeholder="e.g. Bangladesh"
             className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-neutral-800 placeholder:text-neutral-400 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
           />
         </div>
@@ -72,7 +72,7 @@ export function SearchFilters({ onSearch, resultCount, compact = false }: Search
             type="text"
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            placeholder="Enter city"
+            placeholder="e.g. Dhaka"
             className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-neutral-800 placeholder:text-neutral-400 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
           />
         </div>
@@ -88,7 +88,7 @@ export function SearchFilters({ onSearch, resultCount, compact = false }: Search
             type="text"
             value={area}
             onChange={(e) => setArea(e.target.value)}
-            placeholder="Enter area"
+            placeholder="e.g. Uttara"
             className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-neutral-800 placeholder:text-neutral-400 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
           />
         </div>
@@ -104,7 +104,7 @@ export function SearchFilters({ onSearch, resultCount, compact = false }: Search
             type="text"
             value={radius}
             onChange={(e) => setRadius(e.target.value)}
-            placeholder="Enter radius (miles)"
+            placeholder="e.g. 3"
             className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-neutral-800 placeholder:text-neutral-400 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
           />
         </div>

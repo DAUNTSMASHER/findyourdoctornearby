@@ -14,11 +14,13 @@ export function DoctorList({
   userLocation = null,
   locationPlaceholder = "your location",
   radiusPlaceholder = "y",
+  relaxedSearch = false,
 }: {
   doctors: Doctor[];
   userLocation?: UserLocation | null;
   locationPlaceholder?: string;
   radiusPlaceholder?: string;
+  relaxedSearch?: boolean;
 }) {
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
@@ -61,6 +63,11 @@ export function DoctorList({
       <p className="mb-4 text-sm text-neutral-500">
         {t("home.nearLocation")} {locationPlaceholder} {t("home.withinRadius")} {radiusPlaceholder} {t("home.mile")}
       </p>
+      {relaxedSearch && (
+        <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          No exact matches in your area. Showing doctors from nearby.
+        </p>
+      )}
 
       <div className="divide-y divide-neutral-200">
         {paginatedDoctors.length > 0 ? (
