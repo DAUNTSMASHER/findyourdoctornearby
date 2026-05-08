@@ -73,12 +73,18 @@ function applyDoctorFilters(
   }
   if (area?.trim()) {
     const a = area.toLowerCase();
-    result = result.filter(
-      (d) =>
-        d.area?.toLowerCase().includes(a) ||
-        d.workplace?.toLowerCase().includes(a) ||
-        d.city.toLowerCase().includes(a)
-    );
+    result = result.filter((d) => {
+      const areaMatch = d.area?.toLowerCase() || "";
+      const workMatch = d.workplace?.toLowerCase() || "";
+      const cityMatch = d.city.toLowerCase() || "";
+      // Match if the query contains the db value or vice versa
+      // This helps cases where user searches "Uttara 12" but db only has "Uttara"
+      return (
+        areaMatch.includes(a) || (areaMatch.length > 3 && a.includes(areaMatch)) ||
+        workMatch.includes(a) || (workMatch.length > 3 && a.includes(workMatch)) ||
+        cityMatch.includes(a) || (cityMatch.length > 3 && a.includes(cityMatch))
+      );
+    });
   }
   if (problem?.trim()) {
     result = result.filter((d) =>
