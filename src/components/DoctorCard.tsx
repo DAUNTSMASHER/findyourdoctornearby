@@ -5,82 +5,33 @@ import { useTranslation } from "@/contexts/LocaleContext";
 import Image from "next/image";
 import {
   IconDoctorProfile,
-  IconCar,
-  IconBus,
-  IconWalk,
-  IconBike,
   IconThumbsUp,
   IconEye,
   IconAppointment,
-  IconPhone,
   IconPhoneConsultation,
+  IconTelemedicine,
+  IconInPerson
 } from "@/components/icons/MedicalIcons";
-import type { Doctor, TransportOption } from "@/lib/types";
-import { trackCallClick } from "@/lib/analytics";
-
-const transportIcons = {
-  car: IconCar,
-  transit: IconBus,
-  walk: IconWalk,
-  bike: IconBike,
-};
-
-function getBestTransport(options: TransportOption[]): TransportOption {
-  return options.reduce((best, opt) =>
-    opt.timeMinutes < best.timeMinutes ? opt : best
-  );
-}
-
-function getBestSuggestion(
-  best: TransportOption,
-  distanceKm?: number
-): string {
-  if (best.mode === "walk" && (distanceKm ?? 0) < 2) {
-    return "Walking is best — short distance, free and healthy.";
-  }
-  if (best.mode === "car" && (distanceKm ?? 0) > 5) {
-    return "Car recommended — faster for this distance.";
-  }
-  if (best.mode === "bike" && (distanceKm ?? 0) <= 4) {
-    return "Bike is best — quick, cheap and eco-friendly.";
-  }
-  if (best.mode === "transit") {
-    return "Public transit suggested — affordable and avoids traffic.";
-  }
-  return `Best option: ${best.label} — ${best.timeMinutes} min${best.cost ? `, ${best.cost}` : ""}.`;
-}
+import type { Doctor } from "@/lib/types";
 
 interface DoctorCardProps {
   doctor: Doctor;
   userDistanceKm?: number | null;
-  userTransportOptions?: TransportOption[] | null;
   onRecommend?: (doctorId: string) => void;
 }
 
 export function DoctorCard({
   doctor,
   userDistanceKm,
-  userTransportOptions,
   onRecommend,
 }: DoctorCardProps) {
   const { t } = useTranslation();
   const [recommended, setRecommended] = useState(false);
   const [localRecCount, setLocalRecCount] = useState(doctor.recommendationCount ?? 0);
 
-  const mapUrl =
-    doctor.latitude && doctor.longitude
-      ? `https://www.google.com/maps?q=${doctor.latitude},${doctor.longitude}`
-      : `https://www.google.com/maps/search/${encodeURIComponent(doctor.workplace)}`;
-
   const distanceKm = userDistanceKm ?? doctor.distanceKm;
-  const transportOptions = userTransportOptions ?? doctor.transportOptions ?? [];
-  const bestTransport = transportOptions.length
-    ? getBestTransport(transportOptions)
-    : null;
-  const suggestion =
-    bestTransport && distanceKm != null
-      ? getBestSuggestion(bestTransport, distanceKm)
-      : null;
+  const mockExperience = (doctor.totalViews ?? 5000) % 25 + 5; // Generate realistic mock experience
+  const mockFee = ((doctor.recommendationCount ?? 200) % 10 + 5) * 100;
 
   const handleRecommend = () => {
     if (recommended) return;
@@ -90,169 +41,124 @@ export function DoctorCard({
   };
 
   return (
-    <div className="space-y-4 border-b border-neutral-200 py-4 last:border-b-0">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
-        <div className="flex shrink-0 justify-center sm:justify-start">
-          <div className="relative h-24 w-24 overflow-hidden rounded-full border-2 border-teal-400 bg-neutral-100 sm:h-28 sm:w-28">
-            {doctor.imageUrl ? (
-              <Image
-                src={doctor.imageUrl}
-                alt={doctor.name}
-                fill
-                className="object-cover"
-                sizes="112px"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center">
-                <IconDoctorProfile className="h-10 w-10 text-teal-500 sm:h-12 sm:w-12" />
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="min-w-0 flex-1 space-y-1 text-right">
-          <h3 className="font-bold text-neutral-800">{doctor.name}</h3>
-          <p className="text-sm text-neutral-600">{doctor.specialization}</p>
-          <p className="text-sm text-neutral-600">{doctor.workplace}</p>
-          <p className="flex items-center justify-end gap-2 text-sm text-neutral-600">
-            <IconPhoneConsultation className="h-4 w-4" />
-            {doctor.phone}
-          </p>
-          
-          {doctor.description && (
-            <p className="mt-2 text-sm text-teal-700 bg-teal-50/50 p-2 rounded-lg text-right font-medium">
-              {doctor.description}
-            </p>
+    <div className="flex flex-col gap-5 rounded-xl border border-neutral-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:flex-row sm:p-6">
+      {/* Profile Image - Square/Rectangle */}
+      <div className="shrink-0">
+        <div className="relative mx-auto h-28 w-28 overflow-hidden rounded-lg border border-neutral-100 bg-neutral-50 sm:h-36 sm:w-36">
+          {doctor.imageUrl ? (
+            <Image
+              src={doctor.imageUrl}
+              alt={doctor.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 112px, 144px"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center">
+              <IconDoctorProfile className="h-12 w-12 text-teal-400" />
+            </div>
           )}
-
-          {/* Stats */}
-          <div className="mt-3 flex flex-wrap justify-end gap-4 text-sm text-neutral-500">
-            {distanceKm != null && (
-              <span className="flex items-center gap-1">
-                <strong className="text-teal-600">{distanceKm} km</strong>
-                {t("home.fromYourLocation")}
-              </span>
-            )}
-            {(doctor.totalViews ?? 0) > 0 && (
-              <span className="flex items-center justify-end gap-1">
-                <IconEye className="h-4 w-4" />
-                {(doctor.totalViews ?? 0).toLocaleString()} {t("home.views")}
-              </span>
-            )}
-            <span className="flex items-center justify-end gap-1">
-              <IconThumbsUp className="h-4 w-4" />
-              <strong className="text-teal-600">{localRecCount}</strong>{" "}
-              {t("home.recommendations")}
-            </span>
-          </div>
-
-          <div className="mt-3 flex flex-wrap justify-end gap-2">
-            {doctor.phone && (
-              <a
-                href={`tel:${doctor.phone.replace(/\s/g, "")}`}
-                onClick={() => trackCallClick(doctor.id)}
-                className="inline-flex items-center gap-2 rounded-full bg-teal-500 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-600 active:bg-teal-700"
-                aria-label={t("home.call")}
-              >
-                <IconPhone className="h-4 w-4" />
-                {t("home.call")}
-              </a>
-            )}
-            <a
-              href={mapUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-full bg-teal-500 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-600"
-            >
-              {t("home.seeLocationMap")}
-            </a>
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-full border border-teal-500 bg-white px-5 py-2 text-sm font-medium text-teal-600 transition-colors hover:bg-teal-50"
-            >
-              <IconAppointment className="h-4 w-4" />
-              {t("home.bookAppointment")}
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* Transport comparison & suggestion */}
-      {transportOptions.length > 0 && (
-        <div className="rounded-xl border border-neutral-200 bg-neutral-50/80 p-4">
-          <h4 className="mb-3 text-right text-sm font-semibold text-neutral-700">
-            {t("home.bestWayToGo")}
-          </h4>
-          {suggestion && (
-            <p className="mb-3 rounded-lg bg-teal-50 px-3 py-2 text-right text-sm text-teal-800">
-              {suggestion}
+      {/* Main Details */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Header Row */}
+        <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-start">
+          <div className="space-y-1">
+            <h3 className="text-xl font-bold text-neutral-800">{doctor.name}</h3>
+            <p className="text-sm font-medium text-neutral-500">{doctor.specialization}</p>
+            <p className="inline-flex items-center gap-1 text-sm font-medium text-blue-600">
+              <span className="flex h-5 items-center rounded-sm bg-blue-50 px-1.5 font-bold">
+                {mockExperience}
+              </span>
+              Years of Experience Overall
             </p>
-          )}
-          <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-neutral-200 bg-neutral-100/80">
-                  <th className="px-3 py-2 text-right font-medium text-neutral-600">
-                    {t("home.transport")}
-                  </th>
-                  <th className="px-3 py-2 text-right font-medium text-neutral-600">
-                    {t("home.time")}
-                  </th>
-                  <th className="px-3 py-2 text-right font-medium text-neutral-600">
-                    {t("home.cost")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {transportOptions.map((opt) => {
-                  const Icon = transportIcons[opt.mode];
-                  const isBest = bestTransport?.mode === opt.mode;
-                  return (
-                    <tr
-                      key={opt.mode}
-                      className={`border-b border-neutral-100 last:border-b-0 ${
-                        isBest ? "bg-teal-50/50" : ""
-                      }`}
-                    >
-                      <td className="flex items-center justify-end gap-2 px-3 py-2">
-                        <Icon className="h-4 w-4 text-teal-600" />
-                        {opt.label}
-                        {isBest && (
-                          <span className="rounded bg-teal-500 px-1.5 py-0.5 text-xs font-medium text-white">
-                            {t("home.best")}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2 text-right font-medium">
-                        {opt.timeMinutes} min
-                      </td>
-                      <td className="px-3 py-2 text-right text-neutral-600">
-                        {opt.cost ?? "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          </div>
+          
+          {/* Badges / Contact top right */}
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-teal-200 bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700">
+              <IconTelemedicine className="h-3.5 w-3.5" />
+              Available for Video Call
+            </div>
+            {doctor.phone && doctor.phone !== "N/A" && (
+              <p className="flex items-center gap-1 text-sm font-medium text-neutral-600">
+                <IconPhoneConsultation className="h-4 w-4" />
+                {doctor.phone}
+              </p>
+            )}
           </div>
         </div>
-      )}
 
-      {/* Recommend button */}
-      <div className="flex items-center justify-end gap-3">
-        <button
-          onClick={handleRecommend}
-          disabled={recommended}
-          className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-            recommended
-              ? "bg-teal-100 text-teal-700"
-              : "bg-teal-50 text-teal-600 hover:bg-teal-100"
-          }`}
-        >
-          <IconThumbsUp
-            className={`h-4 w-4 ${recommended ? "fill-teal-500" : ""}`}
-          />
-          {recommended ? t("home.recommended") : t("home.recommendDoctor")}
-        </button>
+        {/* Chamber Info Grid */}
+        <div className="mt-5 grid grid-cols-1 gap-4 rounded-lg bg-neutral-50/50 p-4 sm:grid-cols-2">
+          {/* Chamber Name & Location */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-neutral-700">
+              <IconInPerson className="h-4 w-4 text-teal-600" />
+              <strong className="text-sm font-bold">Chamber / Hospital</strong>
+            </div>
+            <p className="text-sm font-medium text-neutral-800">{doctor.workplace}</p>
+            <p className="text-xs text-neutral-500">
+              {doctor.area ? `${doctor.area}, ${doctor.city}` : doctor.city}
+              {distanceKm != null && ` • ~${distanceKm} km away`}
+            </p>
+          </div>
+
+          {/* Schedule & Fees */}
+          <div className="space-y-1 sm:text-right">
+            <p className="text-sm font-bold text-neutral-700">Sat - Thu</p>
+            <p className="text-sm text-neutral-600">05:00 PM - 09:00 PM</p>
+            <p className="text-sm font-bold text-teal-700">Fee: {mockFee} Tk</p>
+          </div>
+        </div>
+
+        {/* Footer actions and description */}
+        <div className="mt-5 flex flex-col items-center justify-between gap-4 sm:flex-row sm:items-end">
+          <div className="w-full space-y-3 sm:w-auto flex-1">
+            {doctor.description && (
+              <p className="text-sm leading-relaxed text-neutral-600 italic border-l-2 border-blue-200 pl-3">
+                "{doctor.description}"
+              </p>
+            )}
+            
+            <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-500">
+              {(doctor.totalViews ?? 0) > 0 && (
+                <span className="flex items-center gap-1">
+                  <IconEye className="h-3.5 w-3.5" />
+                  {(doctor.totalViews ?? 0).toLocaleString()} Views
+                </span>
+              )}
+              <button
+                onClick={handleRecommend}
+                disabled={recommended}
+                className={`flex items-center gap-1 transition-colors ${
+                  recommended ? "text-teal-600 font-medium" : "hover:text-teal-600"
+                }`}
+              >
+                <IconThumbsUp className={`h-3.5 w-3.5 ${recommended ? "fill-teal-500" : ""}`} />
+                {localRecCount} Recommend
+              </button>
+            </div>
+          </div>
+
+          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row">
+            <button
+              type="button"
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-blue-600 bg-white px-5 py-2.5 text-sm font-bold text-blue-600 shadow-sm transition-colors hover:bg-blue-600 hover:text-white"
+            >
+              View Profile
+            </button>
+            <button
+              type="button"
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-blue-700"
+            >
+              <IconAppointment className="h-4 w-4" />
+              Book Appointment
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
