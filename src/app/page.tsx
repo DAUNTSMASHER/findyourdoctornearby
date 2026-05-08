@@ -164,13 +164,7 @@ export default function Home() {
                       />
                     </div>
 
-                    {webResults.length > 0 && (
-                      <WebResultsSection
-                        results={webResults}
-                        titleKey="crawl.doctorsFromGoogle"
-                        className="mt-6"
-                      />
-                    )}
+
                     <Disclaimer variant="compact" className="mt-6" />
                   </>
                 )}
