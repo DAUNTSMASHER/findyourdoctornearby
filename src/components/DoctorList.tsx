@@ -76,6 +76,7 @@ export function DoctorList({
               key={doctor.id}
               doctor={doctor}
               userDistanceKm={userDistanceKm}
+              userTransportOptions={userTransport}
             />
           ))
         ) : (
