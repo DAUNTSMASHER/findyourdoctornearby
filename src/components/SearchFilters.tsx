@@ -22,13 +22,7 @@ export function SearchFilters({ onSearch, resultCount, compact = false }: Search
   const [radius, setRadius] = useState("");
 
   useEffect(() => {
-    async function fetchLocation() {
-      if (cachedLocation) {
-        setCountry((prev) => prev || cachedLocation.country || "");
-        setCity((prev) => prev || cachedLocation.city || "");
-        setArea((prev) => prev || cachedLocation.region || "");
-        return;
-      }
+    async function fetchFromIP() {
       try {
         const res = await fetch("https://get.geojs.io/v1/ip/geo.json");
         const data = await res.json();
@@ -39,12 +33,46 @@ export function SearchFilters({ onSearch, resultCount, compact = false }: Search
           setArea((prev) => prev || data.region || "");
         }
       } catch (err) {
-        console.error("Failed to auto-fetch location", err);
+        console.error("Failed to auto-fetch IP location", err);
       }
+    }
+
+    async function fetchFromGPS(lat: number, lon: number) {
+      try {
+        const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
+        const data = await res.json();
+        if (data) {
+          cachedLocation = {
+            country: data.countryName || "",
+            city: data.city || "",
+            region: data.locality || data.principalSubdivision || ""
+          };
+          setCountry((prev) => prev || cachedLocation.country);
+          setCity((prev) => prev || cachedLocation.city);
+          setArea((prev) => prev || cachedLocation.region);
+        }
+      } catch (err) {
+        console.error("Failed to auto-fetch GPS location", err);
+        fetchFromIP();
+      }
+    }
+
+    if (cachedLocation) {
+      setCountry((prev) => prev || cachedLocation.country || "");
+      setCity((prev) => prev || cachedLocation.city || "");
+      setArea((prev) => prev || cachedLocation.region || "");
+      return;
     }
     
     if (!country && !city) {
-      fetchLocation();
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => fetchFromGPS(pos.coords.latitude, pos.coords.longitude),
+          () => fetchFromIP()
+        );
+      } else {
+        fetchFromIP();
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
