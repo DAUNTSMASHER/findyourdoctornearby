@@ -68,8 +68,8 @@ export function DoctorCard({
           <div className="space-y-1">
             <h3 className="text-xl font-bold text-neutral-800">{doctor.name}</h3>
             <p className="text-sm font-medium text-neutral-500">{doctor.specialization}</p>
-            <p className="inline-flex items-center gap-1 text-sm font-medium text-blue-600">
-              <span className="flex h-5 items-center rounded-sm bg-blue-50 px-1.5 font-bold">
+            <p className="inline-flex items-center gap-1 text-sm font-medium text-teal-600">
+              <span className="flex h-5 items-center rounded-sm bg-teal-50 px-1.5 font-bold">
                 {mockExperience}
               </span>
               Years of Experience Overall
@@ -118,7 +118,7 @@ export function DoctorCard({
         <div className="mt-5 flex flex-col items-center justify-between gap-4 sm:flex-row sm:items-end">
           <div className="w-full space-y-3 sm:w-auto flex-1">
             {doctor.description && (
-              <p className="text-sm leading-relaxed text-neutral-600 italic border-l-2 border-blue-200 pl-3">
+              <p className="text-sm leading-relaxed text-neutral-600 italic border-l-2 border-teal-200 pl-3">
                 "{doctor.description}"
               </p>
             )}
@@ -146,13 +146,13 @@ export function DoctorCard({
           <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row">
             <button
               type="button"
-              className="inline-flex items-center justify-center gap-2 rounded-md border border-blue-600 bg-white px-5 py-2.5 text-sm font-bold text-blue-600 shadow-sm transition-colors hover:bg-blue-600 hover:text-white"
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-teal-600 bg-white px-5 py-2.5 text-sm font-bold text-teal-600 shadow-sm transition-colors hover:bg-teal-600 hover:text-white"
             >
               View Profile
             </button>
             <button
               type="button"
-              className="inline-flex items-center justify-center gap-2 rounded-md bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-blue-700"
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-teal-500 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-teal-600"
             >
               <IconAppointment className="h-4 w-4" />
               Book Appointment
