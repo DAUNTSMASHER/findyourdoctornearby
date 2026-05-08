@@ -2,29 +2,37 @@ export async function getDoctorImageUrl(name: string, workplace: string): Promis
   const apiKey = process.env.SERPER_API_KEY;
   if (!apiKey) return undefined;
 
-  // Enhance the query to target profile pictures
-  const query = `"${name}" doctor profile picture OR photo ${workplace || ""}`;
+  // Try a comprehensive query first
+  const query = `"${name}" ${workplace ? workplace : ""} doctor profile photo`;
 
   try {
-    const res = await fetch("https://google.serper.dev/images", {
-      method: "POST",
-      headers: {
-        "X-API-KEY": apiKey,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ q: query })
-    });
+    const fetchWithQuery = async (q: string) => {
+      const res = await fetch("https://google.serper.dev/images", {
+        method: "POST",
+        headers: {
+          "X-API-KEY": apiKey,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ q: q, num: 5 })
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    };
 
-    if (!res.ok) {
-      console.error("Serper API error:", await res.text());
-      return undefined;
+    let data = await fetchWithQuery(query);
+    
+    // Fallback 1: Remove workplace if it was too specific
+    if ((!data || !data.images || data.images.length === 0) && workplace) {
+      data = await fetchWithQuery(`"${name}" doctor profile picture`);
     }
 
-    const data = await res.json();
+    // Fallback 2: Just the name + doctor
+    if (!data || !data.images || data.images.length === 0) {
+      data = await fetchWithQuery(`${name} medical doctor photo`);
+    }
     
-    // Check if we have image results
-    if (data.images && data.images.length > 0) {
-      // Return the first image URL
+    if (data && data.images && data.images.length > 0) {
+      // Find the first image that looks like a direct link (ends in jpg/png/webp) or just return the first one
       return data.images[0].imageUrl;
     }
   } catch (error) {

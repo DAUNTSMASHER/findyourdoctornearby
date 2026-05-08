@@ -12,15 +12,18 @@ export async function generateDoctorsWithGemini(
   if (!process.env.GEMINI_API_KEY) return null;
 
   const prompt = `
-You are a highly accurate medical directory assistant for ${location}.
-Find the top ${limit} real, practicing doctors or specialized clinics in or very near ${location} that specialize in treating "${problem}".
-You must use Google Search to find real, accurate, and up-to-date doctors, exactly as if a user searched "Top doctors for ${problem} in ${location}".
+You are a highly accurate local medical directory. A user is searching for a doctor in the SPECIFIC NEIGHBORHOOD of "${location}".
+
+Task: Find the top ${limit} real, practicing doctors or specialized clinics that are PHYSICALLY LOCATED in or extremely close to "${location}". 
+- Do NOT return famous doctors from across the city if they don't have a chamber in "${location}".
+- PRIORITIZE results with an address explicitly containing "${location.split(',')[0]}".
+- You must use Google Search to find real, accurate, and up-to-date information.
 
 Rules:
 1. Provide real names, real specializations, real workplaces, and real phone numbers. If phone number is unknown, use "N/A".
-2. You must provide a short description indicating why they are recommended.
+2. You must provide a short description indicating why they are recommended for this specific problem: "${problem}".
 3. The response must perfectly match the requested JSON schema.
-4. Assume distanceKm is a reasonable estimate (e.g., 1.5, 3.2) based on the location.
+4. distanceKm: Calculate an accurate estimate from the center of "${location}".
 5. Make sure the output is a valid JSON array.
   `;
 
