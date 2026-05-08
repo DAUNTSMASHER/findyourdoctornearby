@@ -21,6 +21,7 @@ export interface Doctor {
   transportOptions?: TransportOption[];
   totalViews?: number;
   recommendationCount?: number;
+  description?: string;
 }
 
 export interface SearchFilters {

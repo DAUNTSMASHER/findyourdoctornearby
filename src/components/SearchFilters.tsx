@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "@/contexts/LocaleContext";
 import { IconSearch, IconSymptomFever } from "@/components/icons/MedicalIcons";
 import type { SearchFilters as SearchFiltersType } from "@/lib/types";
@@ -11,6 +11,8 @@ interface SearchFiltersProps {
   compact?: boolean;
 }
 
+let cachedLocation: any = null;
+
 export function SearchFilters({ onSearch, resultCount, compact = false }: SearchFiltersProps) {
   const { t } = useTranslation();
   const [problem, setProblem] = useState("");
@@ -18,6 +20,34 @@ export function SearchFilters({ onSearch, resultCount, compact = false }: Search
   const [city, setCity] = useState("");
   const [area, setArea] = useState("");
   const [radius, setRadius] = useState("");
+
+  useEffect(() => {
+    async function fetchLocation() {
+      if (cachedLocation) {
+        setCountry((prev) => prev || cachedLocation.country || "");
+        setCity((prev) => prev || cachedLocation.city || "");
+        setArea((prev) => prev || cachedLocation.region || "");
+        return;
+      }
+      try {
+        const res = await fetch("https://get.geojs.io/v1/ip/geo.json");
+        const data = await res.json();
+        if (data) {
+          cachedLocation = data;
+          setCountry((prev) => prev || data.country || "");
+          setCity((prev) => prev || data.city || "");
+          setArea((prev) => prev || data.region || "");
+        }
+      } catch (err) {
+        console.error("Failed to auto-fetch location", err);
+      }
+    }
+    
+    if (!country && !city) {
+      fetchLocation();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

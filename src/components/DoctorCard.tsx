@@ -117,6 +117,12 @@ export function DoctorCard({
             <IconPhoneConsultation className="h-4 w-4" />
             {doctor.phone}
           </p>
+          
+          {doctor.description && (
+            <p className="mt-2 text-sm text-teal-700 bg-teal-50/50 p-2 rounded-lg text-right font-medium">
+              {doctor.description}
+            </p>
+          )}
 
           {/* Stats */}
           <div className="mt-3 flex flex-wrap justify-end gap-4 text-sm text-neutral-500">

@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { LocaleProvider } from "@/contexts/LocaleContext";
 import { DisclaimerProvider } from "@/contexts/DisclaimerContext";
+import { AdContainer } from "@/components/AdContainer";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -36,6 +37,7 @@ export default function RootLayout({
         </LocaleProvider>
         <Analytics />
         <SpeedInsights />
+        <AdContainer />
       </body>
     </html>
   );

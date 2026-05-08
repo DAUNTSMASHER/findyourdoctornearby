@@ -8,6 +8,7 @@ import { DoctorList } from "@/components/DoctorList";
 import { WebResultsSection } from "@/components/WebResultsSection";
 import { SearchFilters } from "@/components/SearchFilters";
 import { LoadingProgressBar } from "@/components/LoadingProgressBar";
+import { AdUnit } from "@/components/AdUnit";
 import type { Doctor, SearchFilters as SearchFiltersType, UserLocation } from "@/lib/types";
 import { trackSearch } from "@/lib/analytics";
 
@@ -112,11 +113,11 @@ export default function Home() {
       <Header />
       <main
         className={`mx-auto min-h-screen px-4 py-8 pb-20 transition-all duration-500 sm:px-6 ${
-          hasSearched ? "max-w-7xl pt-12 lg:px-8" : "flex max-w-md items-center justify-center"
+          hasSearched ? "max-w-7xl pt-12 lg:px-8" : "flex max-w-md flex-col items-center justify-center pt-20"
         }`}
       >
         {!hasSearched ? (
-          <div className="w-full animate-fade-in">
+          <div className="w-full animate-fade-in space-y-12">
             <SearchFilters
               onSearch={handleSearch}
               resultCount={filteredDoctors.length}
@@ -124,41 +125,66 @@ export default function Home() {
             />
           </div>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-            <div className="min-w-0 animate-pop-in">
-              {loading && (
-                <div className="mb-6 space-y-2">
-                  <p className="text-sm font-medium text-teal-600">Loading doctors...</p>
-                  <LoadingProgressBar />
-                </div>
-              )}
-              {!loading && (
-              <DoctorList
-                doctors={filteredDoctors}
-                userLocation={userLocation}
-                locationPlaceholder={locationInfo.location}
-                radiusPlaceholder={locationInfo.radius}
-                relaxedSearch={relaxedSearch}
+          <div className="space-y-8">
+            <div className="flex justify-center overflow-x-auto pb-4 hide-scrollbar">
+              <AdUnit 
+                id="50bbf212b722a5bb5fd154a5249a5920" 
+                format="iframe" 
+                height={90} 
+                width={728} 
+                className="min-w-[728px]"
               />
-              {webResults.length > 0 && (
-                <WebResultsSection
-                  results={webResults}
-                  titleKey="crawl.doctorsFromGoogle"
-                  className="mt-6"
-                />
-              )}
-              <Disclaimer variant="compact" className="mt-6" />
-              )}
             </div>
-            <aside className="lg:sticky lg:top-8 lg:self-start">
-              <div className="animate-pop-in [animation-delay:100ms]">
-                <SearchFilters
-                  onSearch={handleSearch}
-                  resultCount={filteredDoctors.length}
-                  compact={true}
-                />
+
+            <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+              <div className="min-w-0 animate-pop-in">
+                {loading && (
+                  <div className="mb-6 space-y-2">
+                    <p className="text-sm font-medium text-teal-600">Loading doctors...</p>
+                    <LoadingProgressBar />
+                  </div>
+                )}
+                {!loading && (
+                  <>
+                    <DoctorList
+                      doctors={filteredDoctors}
+                      userLocation={userLocation}
+                      locationPlaceholder={locationInfo.location}
+                      radiusPlaceholder={locationInfo.radius}
+                      relaxedSearch={relaxedSearch}
+                    />
+                    
+                    <div className="mt-8 flex justify-center">
+                      <AdUnit 
+                        id="e353dd181d7c01859c2e118023fbd66c" 
+                        format="iframe" 
+                        height={60} 
+                        width={468} 
+                        label="Promoted"
+                      />
+                    </div>
+
+                    {webResults.length > 0 && (
+                      <WebResultsSection
+                        results={webResults}
+                        titleKey="crawl.doctorsFromGoogle"
+                        className="mt-6"
+                      />
+                    )}
+                    <Disclaimer variant="compact" className="mt-6" />
+                  </>
+                )}
               </div>
-            </aside>
+              <aside className="space-y-6 lg:sticky lg:top-8 lg:self-start">
+                <div className="animate-pop-in [animation-delay:100ms]">
+                  <SearchFilters
+                    onSearch={handleSearch}
+                    resultCount={filteredDoctors.length}
+                    compact={true}
+                  />
+                </div>
+              </aside>
+            </div>
           </div>
         )}
       </main>
