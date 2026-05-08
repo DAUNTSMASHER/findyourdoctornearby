@@ -134,6 +134,25 @@ export async function getDoctorsWithCrawl(
     relaxedSearch = doctors.length > 0;
   }
 
+  // GEMINI AI INTEGRATION: If we have very few exact matches, ask Gemini to find real doctors
+  if (doctors.length < 5 && process.env.GEMINI_API_KEY) {
+    const loc = [area, city, country].filter(Boolean).join(", ");
+    const prob = problem || "general healthcare";
+    if (loc) {
+      try {
+        const { generateDoctorsWithGemini } = await import("@/lib/gemini-search");
+        const aiDoctors = await generateDoctorsWithGemini(loc, prob, 5);
+        if (aiDoctors && aiDoctors.length > 0) {
+          // Prepend AI doctors so they show up at the top
+          doctors = [...aiDoctors, ...doctors];
+          relaxedSearch = false; // We found precise AI matches
+        }
+      } catch (err) {
+        console.error("Failed to load Gemini doctors", err);
+      }
+    }
+  }
+
   const total = doctors.length;
   const start = (page - 1) * limit;
   doctors = doctors.slice(start, start + limit);
