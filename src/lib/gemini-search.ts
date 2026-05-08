@@ -55,23 +55,35 @@ Rules:
     
     const parsed = JSON.parse(response.text);
     
-    // Map to our app's Doctor interface
-    return parsed.map((d: any) => ({
-      id: crypto.randomUUID(),
-      name: d.name,
-      specialization: d.specialization,
-      workplace: d.workplace,
-      phone: d.phone,
-      country: "Bangladesh",
-      city: location.includes(',') ? location.split(',')[0].trim() : "Local City",
-      area: location,
-      latitude: d.latitude || undefined,
-      longitude: d.longitude || undefined,
-      distanceKm: d.distanceKm,
-      totalViews: Math.floor(Math.random() * 5000) + 1000,
-      recommendationCount: Math.floor(Math.random() * 500) + 50,
-      description: d.description + " ✨ (AI Found)"
-    }));
+    // Import the Serper image fetcher dynamically to avoid top-level issues if running in specific environments
+    const { getDoctorImageUrl } = await import("./image-search");
+
+    // Map to our app's Doctor interface and fetch real images
+    const doctorPromises = parsed.map(async (d: any) => {
+      // Find real profile picture using Serper
+      const imageUrl = await getDoctorImageUrl(d.name, d.workplace);
+
+      return {
+        id: crypto.randomUUID(),
+        name: d.name,
+        specialization: d.specialization,
+        workplace: d.workplace,
+        phone: d.phone,
+        country: "Bangladesh",
+        city: location.includes(',') ? location.split(',')[0].trim() : "Local City",
+        area: location,
+        latitude: d.latitude || undefined,
+        longitude: d.longitude || undefined,
+        distanceKm: d.distanceKm,
+        totalViews: Math.floor(Math.random() * 5000) + 1000,
+        recommendationCount: Math.floor(Math.random() * 500) + 50,
+        description: d.description + " ✨ (AI Found)",
+        imageUrl: imageUrl, // Attach the real photo!
+        isAiGenerated: true
+      };
+    });
+
+    return await Promise.all(doctorPromises);
   } catch (error) {
     console.error("Gemini AI error:", error);
     return null;
